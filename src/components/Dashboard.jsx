@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useCallback } from 'react';
-import { Map, ClipboardList, Filter } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { Map, ClipboardList } from 'lucide-react';
 
 const FLOW_STAGES = [
   'Planning',
@@ -18,12 +18,12 @@ const FLOW_STAGES = [
 const ROLE_COLUMNS = {
   Planner: ['PO No', 'Plant', 'FCL Containers', 'Material', 'Fumigation Req', 'Batch No'],
   Booker: ['PO No', 'Containers Assigned'],
-  'Vehicle Assigner': ['Container No', 'Vehicle No', 'Route'],
-  'Gate Security': ['Container No', 'Arrival', 'Departure'],
+  'Vehicle assigner/router': ['Container No', 'Vehicle No', 'Route'],
+  'Gate security': ['Container No', 'Arrival', 'Departure'],
   Maintainer: ['Container No', 'Maintenance', 'Pre-load Fumigation'],
-  'Weighing Bridge': ['Container No', 'Empty Wt', 'Loaded Wt', 'Post-load Fumigation', 'Billing'],
-  'QA Checker': ['Container No', 'Quality'],
-  'Loading Supervisor': ['Container No', 'Boxes Loaded'],
+  'Weigh bridge worker': ['Container No', 'Empty Wt', 'Loaded Wt', 'Post-load Fumigation', 'Billing'],
+  'QA checker': ['Container No', 'Quality'],
+  'Loading supervisor': ['Container No', 'Boxes Loaded'],
 };
 
 function LiveTracker({ containers }) {
@@ -70,8 +70,8 @@ function parsePaste(text) {
 }
 
 function ActionBoard({ role, onApplyRows }) {
-  const [rows, setRows] = useState([Array(ROLE_COLUMNS[role].length).fill('')]);
-  const columns = ROLE_COLUMNS[role];
+  const columns = ROLE_COLUMNS[role] ?? ['Container No'];
+  const [rows, setRows] = useState([Array(columns.length).fill('')]);
 
   const handlePaste = useCallback(
     (e) => {
@@ -86,7 +86,7 @@ function ActionBoard({ role, onApplyRows }) {
       });
       setRows(normalized);
     },
-    [columns.length]
+    [columns]
   );
 
   const updateCell = (r, c, val) => {
@@ -171,8 +171,8 @@ export default function Dashboard({ user }) {
     // For demo: if a row contains Container No and a new stage keyword, update stage heuristically
     const flat = [...containers];
     rows.forEach((r) => {
-      const idx = columnsIndexMapper(user.role, r);
-      const containerNo = idx.containerKey !== -1 ? r[idx.containerKey] : '';
+      const idx = columnsIndexMapper(user.role);
+      const containerNo = idx !== -1 ? r[idx] : '';
       const nextStage = r.find((cell) => FLOW_STAGES.includes(cell));
       if (containerNo) {
         const i = flat.findIndex((c) => c.id === containerNo);
@@ -182,18 +182,18 @@ export default function Dashboard({ user }) {
     setContainers(flat);
   };
 
-  const columnsIndexMapper = (role, row) => {
+  const columnsIndexMapper = (role) => {
     const map = {
       Planner: -1,
       Booker: 0, // PO
-      'Vehicle Assigner': 0, // Container No
-      'Gate Security': 0,
+      'Vehicle assigner/router': 0, // Container No
+      'Gate security': 0,
       Maintainer: 0,
-      'Weighing Bridge': 0,
-      'QA Checker': 0,
-      'Loading Supervisor': 0,
+      'Weigh bridge worker': 0,
+      'QA checker': 0,
+      'Loading supervisor': 0,
     };
-    return { containerKey: map[role] ?? -1 };
+    return map[role] ?? -1;
   };
 
   return (
